@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Chat{% endblock %}
+{% block content %}
+<header class="glass-header">
+  <div class="flex items-center gap-3">
+    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center shadow-md">
+      <i class="fas fa-comments text-white text-xl"></i>
+    </div>
+    <div>
+      <h1 class="font-bold text-lg text-slate-800 dark:text-white">Messages</h1>
+      <p class="text-xs text-slate-400">Chat with friends</p>
+    </div>
+  </div>
+  <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+    <i class="fas fa-moon text-slate-600 dark:text-slate-300"></i>
+  </button>
+</header>
+
+<div class="page-content">
+  {% if rooms %}
+  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3">Recent Chats</p>
+  <div class="space-y-3 mb-8">
+    {% for r in rooms %}
+    <a href="{{ url_for('chat_room', room_name=r.room) }}" class="card flex items-center gap-4 p-4 group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all no-underline text-inherit">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-300 to-primary-500 flex items-center justify-center text-white font-bold text-xl shadow-md">{{ r.avatar }}</div>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-slate-800 dark:text-white truncate">{{ r.name }}
+          {% if r.status == 'online' %}<span class="w-2 h-2 bg-emerald-500 rounded-full inline-block ml-1 align-middle"></span>{% endif %}
+        </p>
+        <p class="text-sm text-slate-400 truncate mt-0.5">{{ r.last_msg or 'Start a conversation' }}</p>
+      </div>
+      {% if r.msg_count and r.msg_count > 0 %}
+      <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">{{ r.msg_count }}</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state mb-6">
+    <i class="fas fa-comment-dots"></i>
+    <p class="font-bold text-slate-500 text-lg mb-1">No conversations yet</p>
+    <p class="text-sm">Start chatting with someone below!</p>
+  </div>
+  {% endif %}
+
+  <!-- Start new chat -->
+  {% if friends %}
+  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-user-plus text-primary-500 mr-2"></i>Start a New Chat</p>
+  <div class="space-y-3">
+    {% for f in friends %}
+    <a href="{{ url_for('start_chat', user_id=f.id) }}" class="card flex items-center gap-4 p-4 group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all no-underline text-inherit">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-300 to-primary-500 flex items-center justify-center text-white font-bold text-xl shadow-md">{{ f.avatar }}</div>
+      <div class="flex-1">
+        <p class="font-bold text-slate-800 dark:text-white text-lg">{{ f.name }}</p>
+        <p class="text-xs text-slate-400">Tap to message</p>
+      </div>
+      <i class="fas fa-chevron-right text-slate-300 group-hover:translate-x-1 transition-transform"></i>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<nav class="floating-nav">
+  <a href="{{ url_for('home') }}" class="nav-link"><i class="fas fa-house"></i><span>Home</span></a>
+  <a href="{{ url_for('communities') }}" class="nav-link"><i class="fas fa-users"></i><span>Groups</span></a>
+  <a href="{{ url_for('chat') }}" class="nav-link active"><i class="fas fa-comment-dots"></i><span>Chat</span></a>
+  <a href="{{ url_for('events') }}" class="nav-link"><i class="fas fa-calendar-days"></i><span>Events</span></a>
+  <a href="{{ url_for('health') }}" class="nav-link"><i class="fas fa-heart-pulse"></i><span>Health</span></a>
+</nav>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Health{% endblock %}
+{% block content %}
+<header class="glass-header">
+  <div class="flex items-center gap-3">
+    <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl flex items-center justify-center shadow-md">
+      <i class="fas fa-heart-pulse text-white text-xl"></i>
+    </div>
+    <div>
+      <h1 class="font-bold text-lg text-slate-800 dark:text-white">Health & Wellness</h1>
+      <p class="text-xs text-slate-400">Stay healthy, stay happy</p>
+    </div>
+  </div>
+  <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+    <i class="fas fa-moon text-slate-600 dark:text-slate-300"></i>
+  </button>
+</header>
+
+<div class="page-content">
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-6 bg-white dark:bg-slate-800 rounded-2xl p-1.5 border border-slate-100 dark:border-slate-700">
+    <button id="tabTips" onclick="switchTab('tips')" class="flex-1 py-3 px-4 rounded-xl font-semibold text-lg transition-all bg-primary-500 text-white flex items-center justify-center gap-2"><i class="fas fa-lightbulb"></i>Tips</button>
+    <button id="tabMeds" onclick="switchTab('meds')" class="flex-1 py-3 px-4 rounded-xl font-semibold text-lg transition-all text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2"><i class="fas fa-pills"></i>Medicines</button>
+  </div>
+
+  <!-- Health Tips -->
+  <div id="tipsSection">
+    <div class="space-y-3">
+      {% for t in tips %}
+      <div class="card flex items-start gap-4 p-5 group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+        <div class="w-14 h-14 rounded-2xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <i class="fas {{ t.icon }} text-3xl text-primary-500"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 dark:text-white text-lg">{{ t.title }}</h3>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{{ t.description }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Medicines -->
+  <div id="medsSection" class="hidden">
+    <div class="flex items-center justify-between mb-4">
+      <p class="font-bold text-slate-700 dark:text-slate-300">{{ meds|length }} medicine{{ 's' if meds|length != 1 }} added</p>
+      <button onclick="showAddMed()" class="btn-secondary text-sm py-3 px-5"><i class="fas fa-plus mr-2"></i>Add Medicine</button>
+    </div>
+
+    <div id="medsList" class="space-y-3">
+      {% if meds %}
+        {% for m in meds %}
+        <div class="card flex items-center gap-4 p-4" id="med-{{ m.id }}">
+          <input type="checkbox" class="med-checkbox" {% if m.taken %}checked{% endif %} onchange="toggleMed({{ m.id }}, this)">
+          <div class="flex-1">
+            <p class="font-bold text-slate-800 dark:text-white {% if m.taken %}line-through text-slate-400{% endif %}">{{ m.name }}</p>
+            <p class="text-xs text-slate-400">{{ m.dosage }} • {{ m.med_time }} • {{ m.food }}</p>
+          </div>
+          <button onclick="deleteMed({{ m.id }})" class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all flex-shrink-0"><i class="fas fa-trash-can"></i></button>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-pills"></i>
+        <p class="font-bold text-slate-500 text-lg mb-1">No medicines added</p>
+        <p class="text-sm mb-4">Tap "Add Medicine" to set reminders</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Add Medicine Modal -->
+<div id="addMedModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center backdrop-blur-sm p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-md p-6 shadow-2xl">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-3"><span class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center"><i class="fas fa-pills text-primary-500"></i></span>Add Medicine</h3>
+      <button onclick="hideAddMed()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"><i class="fas fa-xmark text-lg"></i></button>
+    </div>
+    <form method="POST" action="{{ url_for('add_medicine') }}" class="space-y-4">
+      <div>
+        <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">Medicine Name</label>
+        <input type="text" name="name" placeholder="e.g. Amlodipine 5mg" required class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
+      </div>
+      <div>
+        <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">Dosage</label>
+        <input type="text" name="dosage" placeholder="e.g. 1 tablet after breakfast" required class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">Time</label>
+          <input type="time" name="med_time" value="08:00" class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">With Food</label>
+          <select name="food" class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
+            <option>After breakfast</option>
+            <option>Before breakfast</option>
+            <option>After lunch</option>
+            <option>Before dinner</option>
+            <option>With food</option>
+            <option>On empty stomach</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary w-full mt-2"><i class="fas fa-plus mr-2"></i>Save Reminder</button>
+    </form>
+  </div>
+</div>
+
+<nav class="floating-nav">
+  <a href="{{ url_for('home') }}" class="nav-link"><i class="fas fa-house"></i><span>Home</span></a>
+  <a href="{{ url_for('communities') }}" class="nav-link"><i class="fas fa-users"></i><span>Groups</span></a>
+  <a href="{{ url_for('chat') }}" class="nav-link"><i class="fas fa-comment-dots"></i><span>Chat</span></a>
+  <a href="{{ url_for('events') }}" class="nav-link"><i class="fas fa-calendar-days"></i><span>Events</span></a>
+  <a href="{{ url_for('health') }}" class="nav-link active"><i class="fas fa-heart-pulse"></i><span>Health</span></a>
+</nav>
+
+<script>
+let currentTab = 'tips';
+
+function switchTab(tab) {
+  currentTab = tab;
+  const tipsBtn = document.getElementById('tabTips');
+  const medsBtn = document.getElementById('tabMeds');
+  tipsBtn.className = 'flex-1 py-3 px-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 ' + (tab === 'tips' ? 'bg-primary-500 text-white' : 'text-slate-500 dark:text-slate-400');
+  medsBtn.className = 'flex-1 py-3 px-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 ' + (tab === 'meds' ? 'bg-primary-500 text-white' : 'text-slate-500 dark:text-slate-400');
+  document.getElementById('tipsSection').classList.toggle('hidden', tab !== 'tips');
+  document.getElementById('medsSection').classList.toggle('hidden', tab !== 'meds');
+}
+
+function showAddMed() {
+  const modal = document.getElementById('addMedModal');
+  modal.classList.remove('hidden');
+  gsap.from('#addMedModal > div', {duration: 0.3, y: 50, opacity: 0, ease: 'power3.out'});
+}
+
+function hideAddMed() {
+  const modal = document.getElementById('addMedModal');
+  gsap.to('#addMedModal > div', {duration: 0.2, y: 50, opacity: 0, ease: 'power2.in', onComplete: () => modal.classList.add('hidden')});
+}
+
+function toggleMed(id, checkbox) {
+  fetch('/medicine/toggle/' + id, { method: 'POST' }).then(r => r.json()).then(d => {
+    if (d.success) {
+      const card = document.getElementById('med-' + id);
+      const name = card.querySelector('.font-bold');
+      name.classList.toggle('line-through');
+      name.classList.toggle('text-slate-400');
+      gsap.fromTo(card, {scale: 1}, {scale: 0.98, duration: 0.1, yoyo: true, repeat: 1});
+      showToast(checkbox.checked ? '✅ Marked as taken' : '⏳ Marked as pending');
+    }
+  });
+}
+
+function deleteMed(id) {
+  if (!confirm('Remove this medicine?')) return;
+  fetch('/medicine/delete/' + id, { method: 'POST' }).then(r => r.json()).then(d => {
+    if (d.success) {
+      const card = document.getElementById('med-' + id);
+      gsap.to(card, {x: 100, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: () => {
+        card.remove();
+        if (!document.querySelector('#medsList .card')) {
+          document.getElementById('medsList').innerHTML = '<div class="empty-state"><i class="fas fa-pills"></i><p class="font-bold text-slate-500 text-lg mb-1">No medicines added</p><p class="text-sm mb-4">Tap "Add Medicine" to set reminders</p></div>';
+        }
+      }});
+      showToast('🗑️ Medicine removed');
+    }
+  });
+}
+
+// Close modal on backdrop click
+document.getElementById('addMedModal').addEventListener('click', function(e) {
+  if (e.target === this) hideAddMed();
+});
+</script>
+{% endblock %}

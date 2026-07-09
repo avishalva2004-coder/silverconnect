@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Sign Up{% endblock %}
+{% block content %}
+<div class="min-h-screen flex flex-col" style="background: linear-gradient(135deg, #f7f8fa 0%, #fff 50%, #fef3e2 100%);">
+  <div class="flex-1 flex flex-col justify-center px-6 max-w-md mx-auto w-full">
+    <div class="text-center mb-8">
+      <a href="{{ url_for('index') }}" class="inline-block mb-6">
+        <img src="{{ url_for('static', filename='../logo.svg') }}" alt="SilverConnect" class="h-10 mx-auto" onerror="this.style.display='none'">
+      </a>
+      <div class="w-20 h-20 bg-gradient-to-br from-primary-400 to-primary-600 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary-500/20">
+        <i class="fas fa-user-plus text-3xl text-white"></i>
+      </div>
+      <h2 class="serif text-4xl text-primary-500 mb-1">Join SilverConnect</h2>
+      <p class="text-slate-500">Create your account in seconds</p>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 text-red-600 px-5 py-3 rounded-2xl mb-4 text-sm flex items-center gap-3">
+      <i class="fas fa-circle-exclamation"></i>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('signup') }}" class="space-y-4" id="signupForm">
+      <div>
+        <label class="text-sm font-semibold text-slate-600 ml-1 mb-1 block">Full Name</label>
+        <input type="text" name="name" id="nameInput" placeholder="e.g. Sunita Sharma" required pattern="[A-Za-z\s]+" title="Name cannot contain numbers" class="w-full bg-white border-2 border-slate-200 rounded-2xl px-5 py-4 text-lg">
+      </div>
+      <div>
+        <label class="text-sm font-semibold text-slate-600 ml-1 mb-1 block">Email Address</label>
+        <input type="email" name="email" placeholder="your@email.com" required class="w-full bg-white border-2 border-slate-200 rounded-2xl px-5 py-4 text-lg">
+      </div>
+      <div>
+        <label class="text-sm font-semibold text-slate-600 ml-1 mb-1 block">Password</label>
+        <input type="password" name="password" id="passwordInput" placeholder="Create a password" required class="w-full bg-white border-2 border-slate-200 rounded-2xl px-5 py-4 text-lg">
+        <div class="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
+          <div id="strengthBar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:#e2e8f0;"></div>
+        </div>
+        <p id="strengthText" class="text-xs text-slate-400 mt-1"></p>
+      </div>
+      <button type="submit" class="btn-primary w-full text-xl py-5 mt-2 shadow-xl shadow-primary-500/25">
+        <i class="fas fa-user-check"></i> Create My Account
+      </button>
+    </form>
+
+    <p class="text-center text-slate-500 mt-5">
+      Already have an account?
+      <a href="{{ url_for('login_page') }}" class="text-primary-500 font-bold hover:underline">Sign In</a>
+    </p>
+    <p class="text-center mt-3"><a href="{{ url_for('index') }}" class="text-sm text-slate-400 hover:text-primary-500 transition-colors"><i class="fas fa-arrow-left mr-1"></i>Back to home</a></p>
+  </div>
+</div>
+
+<script>
+var pwInput = document.getElementById('passwordInput');
+var strengthBar = document.getElementById('strengthBar');
+var strengthText = document.getElementById('strengthText');
+if (pwInput) {
+  pwInput.addEventListener('input', function() {
+    var v = this.value;
+    var score = 0;
+    if (v.length >= 8) score++;
+    if (/[A-Z]/.test(v)) score++;
+    if (/[a-z]/.test(v)) score++;
+    if (/\d/.test(v)) score++;
+    if (score === 0) { strengthBar.style.width = '0%'; strengthBar.style.background = '#e2e8f0'; strengthText.textContent = ''; return; }
+    var pct = (score / 4) * 100;
+    strengthBar.style.width = pct + '%';
+    if (score <= 1) { strengthBar.style.background = '#ef4444'; strengthText.textContent = 'Weak'; strengthText.style.color = '#ef4444'; }
+    else if (score <= 2) { strengthBar.style.background = '#f97316'; strengthText.textContent = 'Fair'; strengthText.style.color = '#f97316'; }
+    else if (score <= 3) { strengthBar.style.background = '#eab308'; strengthText.textContent = 'Good'; strengthText.style.color = '#eab308'; }
+    else { strengthBar.style.background = '#22c55e'; strengthText.textContent = 'Strong'; strengthText.style.color = '#22c55e'; }
+  });
+}
+
+var nameInput = document.getElementById('nameInput');
+if (nameInput) {
+  nameInput.addEventListener('input', function() {
+    if (/\d/.test(this.value)) {
+      this.setCustomValidity('Name cannot contain numbers');
+    } else {
+      this.setCustomValidity('');
+    }
+  });
+}
+
+gsap.from('.btn-primary', {duration: 0.5, scale: 0.9, opacity: 0, ease: 'back.out(1.7)', delay: 0.3});
+</script>
+{% endblock %}

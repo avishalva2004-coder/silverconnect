@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 70" fill="none">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbb95c"/>
+      <stop offset="50%" stop-color="#d4880f"/>
+      <stop offset="100%" stop-color="#a96c0c"/>
+    </linearGradient>
+  </defs>
+  <path d="M12 38C12 25.5 22 18 30 25C38 18 48 25.5 48 38C48 48 38 56 30 62C22 56 12 48 12 38Z" fill="url(#goldGrad)" opacity="0.88"/>
+  <path d="M20 38C20 29 28 23 30 28C32 23 40 29 40 38C40 44 34 50 30 54C26 50 20 44 20 38Z" fill="white" opacity="0.35"/>
+  <path d="M24 38C24 33 28 29 30 32C32 29 36 33 36 38C36 42 33 45 30 47C27 45 24 42 24 38Z" fill="white" opacity="0.25"/>
+  <text x="62" y="46" font-family="'Plus Jakarta Sans',-apple-system,sans-serif" font-size="34" font-weight="700" fill="#1e293b" letter-spacing="-0.5">Silver</text>
+  <text x="168" y="46" font-family="'Plus Jakarta Sans',-apple-system,sans-serif" font-size="34" font-weight="300" fill="#d4880f" letter-spacing="-0.5">Connect</text>
+</svg>

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Chat{% endblock %}
+{% block content %}
+<div class="min-h-screen flex flex-col">
+  <!-- Chat Header -->
+  <header class="glass-header">
+    <div class="flex items-center gap-3">
+      <a href="{{ url_for('chat') }}" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+        <i class="fas fa-arrow-left text-lg text-slate-600 dark:text-slate-300"></i>
+      </a>
+      <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-300 to-primary-500 flex items-center justify-center text-white font-bold text-xl shadow-md">{{ partner.avatar }}</div>
+      <div>
+        <p class="font-bold text-lg text-slate-800 dark:text-white">{{ partner.name }}</p>
+        <p class="text-xs flex items-center gap-1" id="statusBadge"><span class="w-2 h-2 rounded-full inline-block" id="statusDot"></span><span id="statusText"></span></p>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="showToast('🔊 Voice call feature coming soon!')" class="w-12 h-12 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center hover:bg-green-100 dark:hover:bg-green-900/50 transition-all"><i class="fas fa-phone text-lg text-green-500"></i></button>
+      <button onclick="showToast('📹 Video call feature coming soon!')" class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all"><i class="fas fa-video text-lg text-blue-500"></i></button>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  <div class="flex-1 overflow-y-auto p-4 space-y-3" id="chatMessages" style="background:#fafafa;min-height:60vh;">
+    {% if messages %}
+      {% for m in messages %}
+      <div class="flex {% if m.user_id == session['user_id'] %}justify-end{% else %}justify-start{% endif %}">
+        <div class="msg-bubble {% if m.user_id == session['user_id'] %}sent{% else %}received{% endif %}">
+          {% if m.content %}<p>{{ m.content }}</p>{% endif %}
+          {% if m.image_url %}<img src="{{ m.image_url }}" class="mt-1 rounded-xl max-w-full" style="max-height:200px" loading="lazy">{% endif %}
+          <div class="text-[10px] {% if m.user_id == session['user_id'] %}text-white/60 text-right{% else %}text-slate-400 text-left{% endif %} mt-1">
+            {{ m.created_at.strftime('%I:%M %p') if m.created_at else 'just now' }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="h-full flex items-center justify-center">
+      <div class="text-center text-slate-400">
+        <i class="fas fa-comment-dots text-5xl mb-4 opacity-30"></i>
+        <p class="text-lg font-medium">No messages yet</p>
+        <p class="text-sm">Say hello to {{ partner.name }}!</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Input -->
+  <div class="p-4 border-t border-slate-200 dark:border-slate-700" style="background: rgba(255,255,255,0.9); backdrop-filter: blur(20px);">
+    <form id="msgForm" class="flex items-center gap-3" onsubmit="sendMessage(event)">
+      <button type="button" onclick="document.getElementById('imgInput').click()" class="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
+        <i class="fas fa-image text-2xl text-primary-500"></i>
+      </button>
+      <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="previewImage(this)">
+      <div id="imgPreview" class="hidden"></div>
+      <input type="text" id="msgInput" placeholder="Type a message..." autocomplete="off" class="flex-1 bg-slate-100 dark:bg-slate-800 border-0 rounded-2xl px-5 py-3">
+      <button type="submit" class="w-14 h-14 rounded-full bg-primary-500 flex items-center justify-center flex-shrink-0 hover:bg-primary-600 transition-all active:scale-95 shadow-lg shadow-primary-500/30">
+        <i class="fas fa-paper-plane text-white text-2xl"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+const room = '{{ room }}';
+const msgsContainer = document.getElementById('chatMessages');
+let selectedFile = null;
+
+function previewImage(input) {
+  const preview = document.getElementById('imgPreview');
+  if (input.files && input.files[0]) {
+    selectedFile = input.files[0];
+    preview.className = 'text-xs text-primary-500 truncate max-w-[120px]';
+    preview.textContent = '📷 ' + selectedFile.name;
+  } else {
+    selectedFile = null;
+    preview.className = 'hidden';
+  }
+}
+
+function sendMessage(e) {
+  e.preventDefault();
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text && !selectedFile) return;
+
+  const fd = new FormData();
+  if (text) fd.append('content', text);
+  if (selectedFile) fd.append('image', selectedFile);
+
+  fetch('/chat/' + room + '/send', {
+    method: 'POST',
+    body: fd
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      const now = new Date();
+      const time = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+      let html = '<div class="flex justify-end"><div class="msg-bubble sent">';
+      if (text) html += '<p>' + text + '</p>';
+      if (d.image_url) html += '<img src="' + d.image_url + '" class="mt-1 rounded-xl max-w-full" style="max-height:200px">';
+      html += '<div class="text-[10px] text-white/60 text-right mt-1">' + time + '</div></div></div>';
+      msgsContainer.innerHTML += html;
+      input.value = '';
+      selectedFile = null;
+      document.getElementById('imgPreview').className = 'hidden';
+      document.getElementById('imgInput').value = '';
+      msgsContainer.scrollTop = msgsContainer.scrollHeight;
+    }
+  });
+}
+
+// Partner online status
+function checkStatus() {
+  fetch('/api/user/{{ partner.id }}/status').then(r => r.json()).then(d => {
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusText');
+    if (d.status === 'online') {
+      dot.className = 'w-2 h-2 bg-emerald-500 rounded-full inline-block';
+      txt.className = 'text-xs text-emerald-500';
+      txt.textContent = 'Online';
+    } else {
+      dot.className = 'w-2 h-2 bg-slate-400 rounded-full inline-block';
+      txt.className = 'text-xs text-slate-400';
+      txt.textContent = 'Offline';
+    }
+  });
+}
+checkStatus();
+setInterval(checkStatus, 10000);
+
+// Scroll to bottom
+msgsContainer.scrollTop = msgsContainer.scrollHeight;
+</script>
+{% endblock %}

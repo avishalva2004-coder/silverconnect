@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ group.name }} Chat{% endblock %}
+{% block content %}
+<header class="glass-header">
+  <div class="flex items-center gap-3">
+    <a href="{{ url_for('communities') }}" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+      <i class="fas fa-arrow-left text-slate-600 dark:text-slate-300"></i>
+    </a>
+    <div class="w-12 h-12 rounded-xl bg-gradient-to-br {{ group.color_class }} flex items-center justify-center text-white shadow-md">
+      <i class="fas {{ group.icon }} text-white text-lg"></i>
+    </div>
+    <div>
+      <h1 class="font-bold text-lg text-slate-800 dark:text-white truncate max-w-[180px]">{{ group.name }}</h1>
+      <p class="text-xs text-slate-400">{{ msg_count }} messages</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+      <i class="fas fa-moon text-slate-600 dark:text-slate-300"></i>
+    </button>
+  </div>
+</header>
+
+<div class="page-content" style="padding-bottom: 90px;">
+  <div id="messagesContainer" class="space-y-3 mb-4">
+    {% for m in messages %}
+    <div class="flex items-start gap-3 {% if m.user_id == session.user_id %}flex-row-reverse{% endif %}" data-msg-id="{{ m.id }}">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-300 to-primary-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-md">{{ m.avatar }}</div>
+      <div class="max-w-[75%]">
+        <p class="text-xs text-slate-400 mb-1 {% if m.user_id == session.user_id %}text-right{% endif %}">{{ m.name }} · {{ m.created_at.strftime('%I:%M %p') if m.created_at else '' }}</p>
+        <div class="msg-bubble {% if m.user_id == session.user_id %}sent{% else %}received{% endif %}">
+          {% if m.content %}<p>{{ m.content }}</p>{% endif %}
+          {% if m.image_url %}<img src="{{ m.image_url }}" class="mt-1 rounded-xl max-w-full" style="max-height:200px" loading="lazy">{% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state py-8">
+      <i class="fas fa-comments"></i>
+      <p class="font-bold text-slate-500 text-lg mt-4 mb-1">No messages yet</p>
+      <p class="text-sm">Be the first to start the conversation!</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Send Bar -->
+<div style="position:fixed;bottom:0;left:0;right:0;z-index:50;padding:12px 16px 20px;background:linear-gradient(transparent,#f7f8fa 30%);" class="dark:bg-none dark:bg-slate-900">
+  <div class="max-w-md mx-auto">
+    <form method="POST" action="{{ url_for('group_send', group_id=group.id) }}" class="flex gap-3 items-center" id="sendForm" enctype="multipart/form-data">
+      <button type="button" onclick="document.getElementById('gImgInput').click()" class="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
+        <i class="fas fa-image text-2xl text-primary-500"></i>
+      </button>
+      <input type="file" id="gImgInput" accept="image/*" style="display:none" onchange="previewGroupImage(this)">
+      <div id="gImgPreview" class="hidden"></div>
+      <div class="flex-1 relative">
+        <input type="text" name="content" id="gMsgInput" placeholder="Type a message..." autocomplete="off"
+               class="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-full px-5 py-4 pr-12 text-base focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20 transition-all">
+      </div>
+      <button type="submit" class="w-14 h-14 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-all active:scale-95 shadow-lg shadow-primary-500/30 flex-shrink-0">
+        <i class="fas fa-paper-plane text-xl"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+var lastMsgId = {{ messages[-1].id if messages else 0 }};
+var gSelectedFile = null;
+
+function previewGroupImage(input) {
+  var preview = document.getElementById('gImgPreview');
+  if (input.files && input.files[0]) {
+    gSelectedFile = input.files[0];
+    preview.className = 'text-xs text-primary-500 truncate max-w-[120px]';
+    preview.textContent = '\uD83D\uDCF7 ' + gSelectedFile.name;
+  } else {
+    gSelectedFile = null;
+    preview.className = 'hidden';
+  }
+}
+
+function makeMsgHtml(m) {
+  var time = '';
+  if (m.created_at) { try { time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); } catch(e) { time = ''; } }
+  var contentHtml = '';
+  if (m.content) contentHtml += '<p>' + m.content + '</p>';
+  if (m.image_url) contentHtml += '<img src="' + m.image_url + '" class="mt-1 rounded-xl max-w-full" style="max-height:200px" loading="lazy">';
+  var align = m.user_id == {{ session.user_id }} ? 'flex-row-reverse' : '';
+  var textAlign = m.user_id == {{ session.user_id }} ? 'text-right' : '';
+  var bubble = m.user_id == {{ session.user_id }} ? 'sent' : 'received';
+  return '<div class="flex items-start gap-3 ' + align + '" data-msg-id="' + m.id + '"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-300 to-primary-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-md">' + m.avatar + '</div><div class="max-w-[75%]"><p class="text-xs text-slate-400 mb-1 ' + textAlign + '">' + m.name + ' \u00B7 ' + time + '</p><div class="msg-bubble ' + bubble + '">' + contentHtml + '</div></div></div>';
+}
+
+function pollMessages() {
+  fetch('/api/group/{{ group.id }}/messages?after=' + lastMsgId)
+    .then(function(r) { return r.json(); })
+    .then(function(msgs) {
+      msgs.forEach(function(m) {
+        var div = document.createElement('div');
+        div.outerHTML = makeMsgHtml(m);
+        document.getElementById('messagesContainer').innerHTML += makeMsgHtml(m);
+        lastMsgId = m.id;
+      });
+      if (msgs.length > 0) {
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    });
+}
+setInterval(pollMessages, 3000);
+
+document.getElementById('sendForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var input = document.getElementById('gMsgInput');
+  var text = input.value.trim();
+  if (!text && !gSelectedFile) return;
+  var fd = new FormData();
+  if (text) fd.append('content', text);
+  if (gSelectedFile) fd.append('image', gSelectedFile);
+  fetch(this.action, { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        input.value = '';
+        gSelectedFile = null;
+        document.getElementById('gImgPreview').className = 'hidden';
+        document.getElementById('gImgInput').value = '';
+        setTimeout(pollMessages, 300);
+      }
+    });
+});
+window.scrollTo(0, document.body.scrollHeight);
+</script>
+{% endblock %}
