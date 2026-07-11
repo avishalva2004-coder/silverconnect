@@ -598,7 +598,10 @@ def friend_reject(user_id):
     cur.close(); db.close()
     return jsonify({'success': True})
 
+if not os.path.exists(DB_PATH):
+    init_db()
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 if __name__ == '__main__':
-    if not os.path.exists(DB_PATH):
-        init_db()
     app.run(debug=True, port=5000)
