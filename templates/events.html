@@ -34,7 +34,7 @@
         <div class="flex-1">
           <h3 class="font-bold text-slate-800 dark:text-white text-lg">{{ e.title }}</h3>
           <div class="flex flex-wrap gap-3 mt-2 text-sm text-slate-500 dark:text-slate-400">
-            <span class="flex items-center gap-1"><i class="far fa-calendar text-primary-400"></i>{{ e.event_date.strftime('%b %d, %Y') if e.event_date else e.event_date }}</span>
+            <span class="flex items-center gap-1"><i class="far fa-calendar text-primary-400"></i>{{ e.event_date }}</span>
             <span class="flex items-center gap-1"><i class="far fa-clock text-primary-400"></i>{{ e.event_time }}</span>
             <span class="flex items-center gap-1"><i class="fas fa-location-dot text-primary-400"></i>{{ e.venue }}</span>
           </div>
