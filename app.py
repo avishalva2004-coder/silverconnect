@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, g
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 import pymysql
@@ -6,26 +6,41 @@ import os
 import random
 import re
 import uuid
+import json
 
 app = Flask(__name__)
 
-QUOTES = [
-    "The best time to plant a tree was 20 years ago. The second best time is now.",
-    "Age is an issue of mind over matter. If you don't mind, it doesn't matter.",
-    "You are never too old to set another goal or to dream a new dream.",
-    "Life begins at the end of your comfort zone.",
-    "The secret of getting ahead is getting started.",
-    "It does not matter how slowly you go as long as you do not stop.",
-    "Every sunset is an opportunity to reset.",
-    "Growing old is mandatory, but growing up is optional.",
-    "The purpose of life is to live it, to taste experience to the utmost.",
-    "Take care of your body. It's the only place you have to live.",
-    "Happiness is not something ready-made. It comes from your own actions.",
-    "The best way to predict the future is to create it.",
-    "In the middle of every difficulty lies opportunity.",
-    "Keep your face to the sunshine and you cannot see a shadow.",
-    "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
-]
+TRANSLATIONS_DIR = os.path.join(os.path.dirname(__file__), 'translations')
+_translation_cache = {}
+
+def load_translations(lang):
+    if lang in _translation_cache:
+        return _translation_cache[lang]
+    path = os.path.join(TRANSLATIONS_DIR, f'{lang}.json')
+    if os.path.exists(path):
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        _translation_cache[lang] = data
+        return data
+    if lang != 'en':
+        return load_translations('en')
+    return {}
+
+def get_available_languages():
+    langs = []
+    for f in sorted(os.listdir(TRANSLATIONS_DIR)):
+        if f.endswith('.json'):
+            path = os.path.join(TRANSLATIONS_DIR, f)
+            with open(path, 'r', encoding='utf-8') as fh:
+                data = json.load(fh)
+            meta = data.get('__meta__', {})
+            langs.append({
+                'code': f[:-5],
+                'name': meta.get('name', f[:-5]),
+                'native': meta.get('native', f[:-5]),
+                'flag': meta.get('flag', '')
+            })
+    return langs
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
@@ -57,6 +72,36 @@ def login_required(f):
     return wrapper
 
 app.jinja_env.globals.update(enumerate=enumerate, str=str, int=int, len=len)
+
+@app.before_request
+def before_request():
+    lang = request.args.get('lang') or session.get('lang') or 'en'
+    if lang not in [l['code'] for l in get_available_languages()]:
+        lang = 'en'
+    g.lang = lang
+    translations = load_translations(lang)
+    g.translations = translations
+    g.available_languages = get_available_languages()
+
+def translate(text):
+    return g.translations.get(text, text) if hasattr(g, 'translations') else text
+
+app.jinja_env.globals.update(_=translate, available_languages=get_available_languages)
+
+# ─── Language Switch ───
+
+@app.route('/lang/<lang>')
+def set_language(lang):
+    if lang in [l['code'] for l in get_available_languages()]:
+        session['lang'] = lang
+        if 'user_id' in session:
+            db = get_db()
+            cur = db.cursor()
+            cur.execute('UPDATE users SET language = %s WHERE id = %s', (lang, session['user_id']))
+            db.commit()
+            cur.close()
+            db.close()
+    return redirect(request.referrer or url_for('index'))
 
 # ─── Auth Routes ───
 
@@ -105,8 +150,8 @@ def signup():
         return render_template('signup.html', error='Email already registered.')
     pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
     avatar = name.strip()[0].upper()
-    cur.execute('INSERT INTO users (name, email, password_hash, avatar, status) VALUES (%s, %s, %s, %s, %s)',
-                (name, email, pw_hash, avatar, 'online'))
+    cur.execute('INSERT INTO users (name, email, password_hash, avatar, status, language) VALUES (%s, %s, %s, %s, %s, %s)',
+                (name, email, pw_hash, avatar, 'online', session.get('lang', 'en')))
     db.commit()
     user_id = cur.lastrowid
     cur.close()
@@ -130,6 +175,7 @@ def login():
         session['user_id'] = user['id']
         session['user_name'] = user['name']
         session['user_avatar'] = user['avatar']
+        session['lang'] = user.get('language', 'en')
         db2 = get_db()
         cur2 = db2.cursor()
         cur2.execute('UPDATE users SET status = %s WHERE id = %s', ('online', user['id']))
@@ -173,7 +219,10 @@ def home():
     friend_count = cur.fetchone()['cnt']
     cur.close()
     db.close()
-    quote = random.choice(QUOTES)
+    quotes = g.translations.get('__quotes__', [])
+    if not quotes:
+        quotes = ["The best time to plant a tree was 20 years ago. The second best time is now."]
+    quote = random.choice(quotes)
     return render_template('home.html', group_count=group_count, med_count=med_count,
                            today_meds=today_meds, tip=tip, friend_count=friend_count, quote=quote)
 

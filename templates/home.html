@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}{{ _('Home') }}{% endblock %}
 {% block content %}
 <!-- Header -->
 <header class="glass-header">
@@ -9,10 +9,13 @@
     </div>
     <div>
       <h1 class="font-bold text-lg text-slate-800 dark:text-white">SilverConnect</h1>
-      <p class="text-xs text-slate-400">Together in Golden Years</p>
+      <p class="text-xs text-slate-400">{{ _('Together in Golden Years') }}</p>
     </div>
   </div>
   <div class="flex items-center gap-2">
+    <button onclick="openLangModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+      <i class="fas fa-globe text-slate-600 dark:text-slate-300"></i>
+    </button>
     <button id="themeToggle" onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
       <i class="fas fa-moon text-slate-600 dark:text-slate-300"></i>
     </button>
@@ -25,7 +28,7 @@
 <div class="page-content">
   <!-- Greeting -->
   <div class="mb-4">
-    <p class="text-slate-400 text-sm font-medium">Welcome back,</p>
+    <p class="text-slate-400 text-sm font-medium">{{ _('Welcome back,') }}</p>
     <h2 class="serif text-4xl text-primary-500">{{ session.user_name.split(' ')[0] }}</h2>
   </div>
 
@@ -33,7 +36,7 @@
   <div class="card mb-3 text-center">
     <div class="flex items-center justify-center gap-2 mb-2">
       <i class="fas fa-quote-left text-primary-400 text-lg"></i>
-      <p class="text-xs font-semibold text-primary-500 tracking-wider uppercase">Daily Inspiration</p>
+      <p class="text-xs font-semibold text-primary-500 tracking-wider uppercase">{{ _('Daily Inspiration') }}</p>
       <i class="fas fa-quote-right text-primary-400 text-lg"></i>
     </div>
     <p class="text-sm text-slate-600 italic leading-relaxed">"{{ quote }}"</p>
@@ -43,40 +46,40 @@
   <div class="grid grid-cols-3 gap-3 mb-4">
     <div class="card text-center">
       <p class="text-3xl font-bold text-primary-500">{{ friend_count|default(8) }}</p>
-      <p class="text-xs text-slate-400 mt-1">Friends</p>
+      <p class="text-xs text-slate-400 mt-1">{{ _('Friends') }}</p>
     </div>
     <div class="card text-center">
       <p class="text-3xl font-bold text-emerald-500">{{ group_count }}</p>
-      <p class="text-xs text-slate-400 mt-1">Groups</p>
+      <p class="text-xs text-slate-400 mt-1">{{ _('Groups') }}</p>
     </div>
     <div class="card text-center">
       <p class="text-3xl font-bold text-violet-500">{{ med_count }}</p>
-      <p class="text-xs text-slate-400 mt-1">Reminders</p>
+      <p class="text-xs text-slate-400 mt-1">{{ _('Reminders') }}</p>
     </div>
   </div>
 
   <!-- Quick Actions Grid -->
-  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-compass text-primary-500 mr-2"></i>Quick Actions</p>
+  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-compass text-primary-500 mr-2"></i>{{ _('Quick Actions') }}</p>
   <div class="grid grid-cols-2 gap-3 mb-4">
     <a href="{{ url_for('communities') }}" class="card flex flex-col items-start text-left group">
       <div class="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><i class="fas fa-users text-3xl text-emerald-500"></i></div>
-      <p class="font-bold text-slate-800 dark:text-white">Community</p>
-      <p class="text-xs text-slate-400">Join hobby groups</p>
+      <p class="font-bold text-slate-800 dark:text-white">{{ _('Community') }}</p>
+      <p class="text-xs text-slate-400">{{ _('Join hobby groups') }}</p>
     </a>
     <a href="{{ url_for('chat') }}" class="card flex flex-col items-start text-left group">
       <div class="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><i class="fas fa-comments text-3xl text-blue-500"></i></div>
-      <p class="font-bold text-slate-800 dark:text-white">Chat</p>
-      <p class="text-xs text-slate-400">Talk with friends</p>
+      <p class="font-bold text-slate-800 dark:text-white">{{ _('Chat') }}</p>
+      <p class="text-xs text-slate-400">{{ _('Talk with friends') }}</p>
     </a>
     <a href="{{ url_for('events') }}" class="card flex flex-col items-start text-left group">
       <div class="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><i class="fas fa-calendar-days text-3xl text-rose-500"></i></div>
-      <p class="font-bold text-slate-800 dark:text-white">Events</p>
-      <p class="text-xs text-slate-400">Nearby activities</p>
+      <p class="font-bold text-slate-800 dark:text-white">{{ _('Events') }}</p>
+      <p class="text-xs text-slate-400">{{ _('Nearby activities') }}</p>
     </a>
     <a href="{{ url_for('health') }}" class="card flex flex-col items-start text-left group">
       <div class="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><i class="fas fa-heart-pulse text-3xl text-amber-500"></i></div>
-      <p class="font-bold text-slate-800 dark:text-white">Health</p>
-      <p class="text-xs text-slate-400">Tips & reminders</p>
+      <p class="font-bold text-slate-800 dark:text-white">{{ _('Health') }}</p>
+      <p class="text-xs text-slate-400">{{ _('Tips & reminders') }}</p>
     </a>
   </div>
 
@@ -96,8 +99,8 @@
   <!-- Today's Medicines -->
   <div class="card">
     <div class="flex items-center justify-between mb-3">
-      <p class="font-bold text-slate-800 dark:text-white"><i class="fas fa-clock text-primary-500 mr-2"></i>Today's Medicines</p>
-      <a href="{{ url_for('health') }}" class="text-sm text-primary-500 font-semibold hover:underline">Manage</a>
+      <p class="font-bold text-slate-800 dark:text-white"><i class="fas fa-clock text-primary-500 mr-2"></i>{{ _("Today's Medicines") }}</p>
+      <a href="{{ url_for('health') }}" class="text-sm text-primary-500 font-semibold hover:underline">{{ _('Manage') }}</a>
     </div>
     {% if today_meds %}
       {% for med in today_meds %}
@@ -108,18 +111,18 @@
       </div>
       {% endfor %}
     {% else %}
-    <div class="empty-state text-sm py-4"><i class="fas fa-check-circle text-emerald-400 text-2xl mb-2 block"></i>All medicines taken! 🎉</div>
+    <div class="empty-state text-sm py-4"><i class="fas fa-check-circle text-emerald-400 text-2xl mb-2 block"></i>{{ _('All medicines taken! 🎉') }}</div>
     {% endif %}
   </div>
 </div>
 
 <!-- Floating Bottom Nav -->
 <nav class="floating-nav">
-  <a href="{{ url_for('home') }}" class="nav-link active"><i class="fas fa-house"></i><span>Home</span></a>
-  <a href="{{ url_for('communities') }}" class="nav-link"><i class="fas fa-users"></i><span>Groups</span></a>
-  <a href="{{ url_for('chat') }}" class="nav-link"><i class="fas fa-comment-dots"></i><span>Chat</span></a>
-  <a href="{{ url_for('events') }}" class="nav-link"><i class="fas fa-calendar-days"></i><span>Events</span></a>
-  <a href="{{ url_for('health') }}" class="nav-link"><i class="fas fa-heart-pulse"></i><span>Health</span></a>
+  <a href="{{ url_for('home') }}" class="nav-link active"><i class="fas fa-house"></i><span>{{ _('Home') }}</span></a>
+  <a href="{{ url_for('communities') }}" class="nav-link"><i class="fas fa-users"></i><span>{{ _('Groups') }}</span></a>
+  <a href="{{ url_for('chat') }}" class="nav-link"><i class="fas fa-comment-dots"></i><span>{{ _('Chat') }}</span></a>
+  <a href="{{ url_for('events') }}" class="nav-link"><i class="fas fa-calendar-days"></i><span>{{ _('Events') }}</span></a>
+  <a href="{{ url_for('health') }}" class="nav-link"><i class="fas fa-heart-pulse"></i><span>{{ _('Health') }}</span></a>
 </nav>
 
 <script>

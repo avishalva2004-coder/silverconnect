@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Health{% endblock %}
+{% block title %}{{ _('Health') }}{% endblock %}
 {% block content %}
 <header class="glass-header">
   <div class="flex items-center gap-3">
@@ -7,20 +7,25 @@
       <i class="fas fa-heart-pulse text-white text-xl"></i>
     </div>
     <div>
-      <h1 class="font-bold text-lg text-slate-800 dark:text-white">Health & Wellness</h1>
-      <p class="text-xs text-slate-400">Stay healthy, stay happy</p>
+      <h1 class="font-bold text-lg text-slate-800 dark:text-white">{{ _('Health & Wellness') }}</h1>
+      <p class="text-xs text-slate-400">{{ _('Stay healthy, stay happy') }}</p>
     </div>
   </div>
-  <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
-    <i class="fas fa-moon text-slate-600 dark:text-slate-300"></i>
-  </button>
+  <div class="flex items-center gap-2">
+    <button onclick="openLangModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+      <i class="fas fa-globe text-slate-600 dark:text-slate-300"></i>
+    </button>
+    <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+      <i class="fas fa-moon text-slate-600 dark:text-slate-300"></i>
+    </button>
+  </div>
 </header>
 
 <div class="page-content">
   <!-- Tabs -->
   <div class="flex gap-2 mb-6 bg-white dark:bg-slate-800 rounded-2xl p-1.5 border border-slate-100 dark:border-slate-700">
-    <button id="tabTips" onclick="switchTab('tips')" class="flex-1 py-3 px-4 rounded-xl font-semibold text-lg transition-all bg-primary-500 text-white flex items-center justify-center gap-2"><i class="fas fa-lightbulb"></i>Tips</button>
-    <button id="tabMeds" onclick="switchTab('meds')" class="flex-1 py-3 px-4 rounded-xl font-semibold text-lg transition-all text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2"><i class="fas fa-pills"></i>Medicines</button>
+    <button id="tabTips" onclick="switchTab('tips')" class="flex-1 py-3 px-4 rounded-xl font-semibold text-lg transition-all bg-primary-500 text-white flex items-center justify-center gap-2"><i class="fas fa-lightbulb"></i>{{ _('Tips') }}</button>
+    <button id="tabMeds" onclick="switchTab('meds')" class="flex-1 py-3 px-4 rounded-xl font-semibold text-lg transition-all text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2"><i class="fas fa-pills"></i>{{ _('Medicines') }}</button>
   </div>
 
   <!-- Health Tips -->
@@ -43,8 +48,8 @@
   <!-- Medicines -->
   <div id="medsSection" class="hidden">
     <div class="flex items-center justify-between mb-4">
-      <p class="font-bold text-slate-700 dark:text-slate-300">{{ meds|length }} medicine{{ 's' if meds|length != 1 }} added</p>
-      <button onclick="showAddMed()" class="btn-secondary text-sm py-3 px-5"><i class="fas fa-plus mr-2"></i>Add Medicine</button>
+      <p class="font-bold text-slate-700 dark:text-slate-300">{{ meds|length }} {{ _('medicine') }}{{ _('s') if meds|length != 1 }} {{ _('added') }}</p>
+      <button onclick="showAddMed()" class="btn-secondary text-sm py-3 px-5"><i class="fas fa-plus mr-2"></i>{{ _('Add Medicine') }}</button>
     </div>
 
     <div id="medsList" class="space-y-3">
@@ -62,8 +67,8 @@
       {% else %}
       <div class="empty-state">
         <i class="fas fa-pills"></i>
-        <p class="font-bold text-slate-500 text-lg mb-1">No medicines added</p>
-        <p class="text-sm mb-4">Tap "Add Medicine" to set reminders</p>
+        <p class="font-bold text-slate-500 text-lg mb-1">{{ _('No medicines added') }}</p>
+        <p class="text-sm mb-4">{{ _('Tap "Add Medicine" to set reminders') }}</p>
       </div>
       {% endif %}
     </div>
@@ -74,46 +79,46 @@
 <div id="addMedModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center backdrop-blur-sm p-4">
   <div class="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-md p-6 shadow-2xl">
     <div class="flex items-center justify-between mb-5">
-      <h3 class="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-3"><span class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center"><i class="fas fa-pills text-primary-500"></i></span>Add Medicine</h3>
+      <h3 class="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-3"><span class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center"><i class="fas fa-pills text-primary-500"></i></span>{{ _('Add Medicine') }}</h3>
       <button onclick="hideAddMed()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"><i class="fas fa-xmark text-lg"></i></button>
     </div>
     <form method="POST" action="{{ url_for('add_medicine') }}" class="space-y-4">
       <div>
-        <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">Medicine Name</label>
-        <input type="text" name="name" placeholder="e.g. Amlodipine 5mg" required class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
+        <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">{{ _('Medicine Name') }}</label>
+        <input type="text" name="name" placeholder="{{ _('e.g. Amlodipine 5mg') }}" required class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
       </div>
       <div>
-        <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">Dosage</label>
-        <input type="text" name="dosage" placeholder="e.g. 1 tablet after breakfast" required class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
+        <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">{{ _('Dosage') }}</label>
+        <input type="text" name="dosage" placeholder="{{ _('e.g. 1 tablet after breakfast') }}" required class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">Time</label>
+          <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">{{ _('Time') }}</label>
           <input type="time" name="med_time" value="08:00" class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
         </div>
         <div>
-          <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">With Food</label>
+          <label class="text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1 mb-1 block">{{ _('With Food') }}</label>
           <select name="food" class="w-full bg-slate-50 dark:bg-slate-700 rounded-xl px-4 py-3 border-2 border-slate-200 dark:border-slate-600">
-            <option>After breakfast</option>
-            <option>Before breakfast</option>
-            <option>After lunch</option>
-            <option>Before dinner</option>
-            <option>With food</option>
-            <option>On empty stomach</option>
+            <option>{{ _('After breakfast') }}</option>
+            <option>{{ _('Before breakfast') }}</option>
+            <option>{{ _('After lunch') }}</option>
+            <option>{{ _('Before dinner') }}</option>
+            <option>{{ _('With food') }}</option>
+            <option>{{ _('On empty stomach') }}</option>
           </select>
         </div>
       </div>
-      <button type="submit" class="btn-primary w-full mt-2"><i class="fas fa-plus mr-2"></i>Save Reminder</button>
+      <button type="submit" class="btn-primary w-full mt-2"><i class="fas fa-plus mr-2"></i>{{ _('Save Reminder') }}</button>
     </form>
   </div>
 </div>
 
 <nav class="floating-nav">
-  <a href="{{ url_for('home') }}" class="nav-link"><i class="fas fa-house"></i><span>Home</span></a>
-  <a href="{{ url_for('communities') }}" class="nav-link"><i class="fas fa-users"></i><span>Groups</span></a>
-  <a href="{{ url_for('chat') }}" class="nav-link"><i class="fas fa-comment-dots"></i><span>Chat</span></a>
-  <a href="{{ url_for('events') }}" class="nav-link"><i class="fas fa-calendar-days"></i><span>Events</span></a>
-  <a href="{{ url_for('health') }}" class="nav-link active"><i class="fas fa-heart-pulse"></i><span>Health</span></a>
+  <a href="{{ url_for('home') }}" class="nav-link"><i class="fas fa-house"></i><span>{{ _('Home') }}</span></a>
+  <a href="{{ url_for('communities') }}" class="nav-link"><i class="fas fa-users"></i><span>{{ _('Groups') }}</span></a>
+  <a href="{{ url_for('chat') }}" class="nav-link"><i class="fas fa-comment-dots"></i><span>{{ _('Chat') }}</span></a>
+  <a href="{{ url_for('events') }}" class="nav-link"><i class="fas fa-calendar-days"></i><span>{{ _('Events') }}</span></a>
+  <a href="{{ url_for('health') }}" class="nav-link active"><i class="fas fa-heart-pulse"></i><span>{{ _('Health') }}</span></a>
 </nav>
 
 <script>
@@ -148,23 +153,23 @@ function toggleMed(id, checkbox) {
       name.classList.toggle('line-through');
       name.classList.toggle('text-slate-400');
       gsap.fromTo(card, {scale: 1}, {scale: 0.98, duration: 0.1, yoyo: true, repeat: 1});
-      showToast(checkbox.checked ? '✅ Marked as taken' : '⏳ Marked as pending');
+      showToast(checkbox.checked ? {{ _('✅ Marked as taken')|tojson|safe }} : {{ _('⏳ Marked as pending')|tojson|safe }});
     }
   });
 }
 
 function deleteMed(id) {
-  if (!confirm('Remove this medicine?')) return;
+  if (!confirm({{ _('Remove this medicine?')|tojson|safe }})) return;
   fetch('/medicine/delete/' + id, { method: 'POST' }).then(r => r.json()).then(d => {
     if (d.success) {
       const card = document.getElementById('med-' + id);
       gsap.to(card, {x: 100, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: () => {
         card.remove();
         if (!document.querySelector('#medsList .card')) {
-          document.getElementById('medsList').innerHTML = '<div class="empty-state"><i class="fas fa-pills"></i><p class="font-bold text-slate-500 text-lg mb-1">No medicines added</p><p class="text-sm mb-4">Tap "Add Medicine" to set reminders</p></div>';
+          document.getElementById('medsList').innerHTML = '<div class="empty-state"><i class="fas fa-pills"></i><p class="font-bold text-slate-500 text-lg mb-1">' + {{ _('No medicines added')|tojson|safe }} + '</p><p class="text-sm mb-4">' + {{ _('Tap "Add Medicine" to set reminders')|tojson|safe }} + '</p></div>';
         }
       }});
-      showToast('🗑️ Medicine removed');
+      showToast({{ _('🗑️ Medicine removed')|tojson|safe }});
     }
   });
 }

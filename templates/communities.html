@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Communities{% endblock %}
+{% block title %}{{ _('Communities') }}{% endblock %}
 {% block content %}
 <header class="glass-header">
   <div class="flex items-center gap-3">
@@ -7,11 +7,14 @@
       <i class="fas fa-users text-white text-xl"></i>
     </div>
     <div>
-      <h1 class="font-bold text-lg text-slate-800 dark:text-white">Communities</h1>
-      <p class="text-xs text-slate-400">Find your people</p>
+      <h1 class="font-bold text-lg text-slate-800 dark:text-white">{{ _('Communities') }}</h1>
+      <p class="text-xs text-slate-400">{{ _('Find your people') }}</p>
     </div>
   </div>
   <div class="flex items-center gap-2">
+    <button onclick="openLangModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+      <i class="fas fa-globe text-slate-600 dark:text-slate-300"></i>
+    </button>
     <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
       <i class="fas fa-moon text-slate-600 dark:text-slate-300"></i>
     </button>
@@ -19,7 +22,7 @@
 </header>
 
 <div class="page-content">
-  <p class="text-slate-500 dark:text-slate-400 mb-5">Join hobby groups that match your interests</p>
+  <p class="text-slate-500 dark:text-slate-400 mb-5">{{ _('Join hobby groups that match your interests') }}</p>
 
   <div class="space-y-4 mb-8">
     {% for g in groups %}
@@ -35,9 +38,9 @@
           </div>
         </div>
         {% if g.id in joined %}
-          <span class="px-4 py-2 rounded-full bg-emerald-500/30 text-white text-sm font-semibold flex items-center gap-2"><i class="fas fa-check"></i>Joined</span>
+          <span class="px-4 py-2 rounded-full bg-emerald-500/30 text-white text-sm font-semibold flex items-center gap-2"><i class="fas fa-check"></i>{{ _('Joined') }}</span>
         {% else %}
-          <button onclick="event.stopPropagation();joinGroup({{ g.id }}, this)" class="px-5 py-2 rounded-full bg-white/20 text-white font-semibold text-sm hover:bg-white/30 transition-all active:scale-95">Join +</button>
+          <button onclick="event.stopPropagation();joinGroup({{ g.id }}, this)" class="px-5 py-2 rounded-full bg-white/20 text-white font-semibold text-sm hover:bg-white/30 transition-all active:scale-95">{{ _('Join +') }}</button>
         {% endif %}
       </div>
       {% if g.id in joined %}
@@ -50,17 +53,17 @@
 
   <!-- Friend Requests -->
   {% if pending_requests %}
-  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-bell text-amber-500 mr-2"></i>Friend Requests</p>
+  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-bell text-amber-500 mr-2"></i>{{ _('Friend Requests') }}</p>
   <div class="space-y-3 mb-8">
     {% for req in pending_requests %}
     <div class="card flex items-center gap-4 p-4" id="req-{{ req.id }}">
       <div class="w-14 h-14 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-white font-bold text-xl shadow-md">{{ req.avatar }}</div>
       <div class="flex-1">
         <p class="font-bold text-slate-800 dark:text-white text-lg">{{ req.name }}</p>
-        <p class="text-xs text-slate-400">Wants to be friends</p>
+        <p class="text-xs text-slate-400">{{ _('Wants to be friends') }}</p>
       </div>
       <div class="flex gap-2">
-        <button onclick="acceptFriend({{ req.id }}, this)" class="px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-all active:scale-95 flex items-center gap-1"><i class="fas fa-check"></i>Accept</button>
+        <button onclick="acceptFriend({{ req.id }}, this)" class="px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-all active:scale-95 flex items-center gap-1"><i class="fas fa-check"></i>{{ _('Accept') }}</button>
         <button onclick="rejectFriend({{ req.id }}, this)" class="px-4 py-2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-all active:scale-95 flex items-center gap-1"><i class="fas fa-times"></i></button>
       </div>
     </div>
@@ -70,14 +73,14 @@
 
   <!-- My Friends -->
   {% if my_friends %}
-  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-user-group text-blue-500 mr-2"></i>My Friends</p>
+  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-user-group text-blue-500 mr-2"></i>{{ _('My Friends') }}</p>
   <div class="grid grid-cols-2 gap-3 mb-8">
     {% for f in my_friends %}
     <a href="{{ url_for('start_chat', user_id=f.id) }}" class="card flex items-center gap-3 p-3 group">
       <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-300 to-blue-500 flex items-center justify-center text-white font-bold shadow-md">{{ f.avatar }}</div>
       <div class="flex-1 min-w-0">
         <p class="font-bold text-slate-800 dark:text-white text-sm truncate">{{ f.name }}</p>
-        <p class="text-xs text-slate-400">{% if f.status == 'online' %}<i class="fas fa-circle text-emerald-400 text-[8px] mr-1"></i>Online{% else %}<i class="fas fa-circle text-slate-400 text-[8px] mr-1"></i>Offline{% endif %}</p>
+        <p class="text-xs text-slate-400">{% if f.status == 'online' %}<i class="fas fa-circle text-emerald-400 text-[8px] mr-1"></i>{{ _('Online') }}{% else %}<i class="fas fa-circle text-slate-400 text-[8px] mr-1"></i>{{ _('Offline') }}{% endif %}</p>
       </div>
       <i class="fas fa-chevron-right text-slate-300 group-hover:translate-x-1 transition-transform"></i>
     </a>
@@ -86,27 +89,27 @@
   {% endif %}
 
   <!-- Suggested Friends -->
-  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-user-plus text-primary-500 mr-2"></i>People You May Know</p>
+  <p class="font-bold text-base text-slate-700 dark:text-slate-300 mb-3"><i class="fas fa-user-plus text-primary-500 mr-2"></i>{{ _('People You May Know') }}</p>
   <div class="space-y-3">
     {% for f in suggested %}
     <div class="card flex items-center gap-4 p-4 group">
       <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary-300 to-primary-500 flex items-center justify-center text-white font-bold text-xl shadow-md">{{ f.avatar }}</div>
       <div class="flex-1">
         <p class="font-bold text-slate-800 dark:text-white text-lg">{{ f.name }}</p>
-        <p class="text-xs text-slate-400">SilverConnect Member</p>
+        <p class="text-xs text-slate-400">{{ _('SilverConnect Member') }}</p>
       </div>
-      <button onclick="sendRequest({{ f.id }}, this)" class="px-4 py-2 rounded-full bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 transition-all active:scale-95 flex items-center gap-2"><i class="fas fa-user-plus"></i>Add</button>
+      <button onclick="sendRequest({{ f.id }}, this)" class="px-4 py-2 rounded-full bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 transition-all active:scale-95 flex items-center gap-2"><i class="fas fa-user-plus"></i>{{ _('Add') }}</button>
     </div>
     {% endfor %}
   </div>
 </div>
 
 <nav class="floating-nav">
-  <a href="{{ url_for('home') }}" class="nav-link"><i class="fas fa-house"></i><span>Home</span></a>
-  <a href="{{ url_for('communities') }}" class="nav-link active"><i class="fas fa-users"></i><span>Groups</span></a>
-  <a href="{{ url_for('chat') }}" class="nav-link"><i class="fas fa-comment-dots"></i><span>Chat</span></a>
-  <a href="{{ url_for('events') }}" class="nav-link"><i class="fas fa-calendar-days"></i><span>Events</span></a>
-  <a href="{{ url_for('health') }}" class="nav-link"><i class="fas fa-heart-pulse"></i><span>Health</span></a>
+  <a href="{{ url_for('home') }}" class="nav-link"><i class="fas fa-house"></i><span>{{ _('Home') }}</span></a>
+  <a href="{{ url_for('communities') }}" class="nav-link active"><i class="fas fa-users"></i><span>{{ _('Groups') }}</span></a>
+  <a href="{{ url_for('chat') }}" class="nav-link"><i class="fas fa-comment-dots"></i><span>{{ _('Chat') }}</span></a>
+  <a href="{{ url_for('events') }}" class="nav-link"><i class="fas fa-calendar-days"></i><span>{{ _('Events') }}</span></a>
+  <a href="{{ url_for('health') }}" class="nav-link"><i class="fas fa-heart-pulse"></i><span>{{ _('Health') }}</span></a>
 </nav>
 
 <script>
@@ -120,11 +123,11 @@ function joinGroup(id, btn) {
 function sendRequest(id, btn) {
   fetch('/friend/request/' + id, { method: 'POST' }).then(r => r.json()).then(d => {
     if (d.success) {
-      btn.innerHTML = '<i class="fas fa-check"></i> Sent';
+      btn.innerHTML = '<i class="fas fa-check"></i> ' + {{ _('Sent')|tojson|safe }};
       btn.className = 'px-4 py-2 rounded-full bg-slate-300 dark:bg-slate-600 text-white text-sm font-semibold flex items-center gap-2';
       btn.disabled = true;
-      showToast('Friend request sent!');
-    } else { showToast(d.error || 'Error'); }
+      showToast({{ _('Friend request sent!')|tojson|safe }});
+    } else { showToast(d.error || {{ _('Error')|tojson|safe }}); }
   });
 }
 function acceptFriend(id, btn) {
@@ -132,7 +135,7 @@ function acceptFriend(id, btn) {
     if (d.success) {
       const card = document.getElementById('req-' + id);
       gsap.to(card, {opacity: 0, x: 50, duration: 0.3, onComplete: () => card.remove()});
-      showToast('Friend request accepted!');
+      showToast({{ _('Friend request accepted!')|tojson|safe }});
     }
   });
 }
@@ -141,7 +144,7 @@ function rejectFriend(id, btn) {
     if (d.success) {
       const card = document.getElementById('req-' + id);
       gsap.to(card, {opacity: 0, x: -50, duration: 0.3, onComplete: () => card.remove()});
-      showToast('Request declined');
+      showToast({{ _('Request declined')|tojson|safe }});
     }
   });
 }

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ group.name }} Chat{% endblock %}
+{% block title %}{{ group.name }} {{ _('Chat') }}{% endblock %}
 {% block content %}
 <header class="glass-header">
   <div class="flex items-center gap-3">
@@ -11,10 +11,13 @@
     </div>
     <div>
       <h1 class="font-bold text-lg text-slate-800 dark:text-white truncate max-w-[180px]">{{ group.name }}</h1>
-      <p class="text-xs text-slate-400">{{ msg_count }} messages</p>
+      <p class="text-xs text-slate-400">{{ msg_count }} {{ _('messages') }}</p>
     </div>
   </div>
   <div class="flex items-center gap-2">
+    <button onclick="openLangModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+      <i class="fas fa-globe text-slate-600 dark:text-slate-300"></i>
+    </button>
     <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
       <i class="fas fa-moon text-slate-600 dark:text-slate-300"></i>
     </button>
@@ -37,8 +40,8 @@
     {% else %}
     <div class="empty-state py-8">
       <i class="fas fa-comments"></i>
-      <p class="font-bold text-slate-500 text-lg mt-4 mb-1">No messages yet</p>
-      <p class="text-sm">Be the first to start the conversation!</p>
+      <p class="font-bold text-slate-500 text-lg mt-4 mb-1">{{ _('No messages yet') }}</p>
+      <p class="text-sm">{{ _('Be the first to start the conversation!') }}</p>
     </div>
     {% endfor %}
   </div>
@@ -54,7 +57,7 @@
       <input type="file" id="gImgInput" accept="image/*" style="display:none" onchange="previewGroupImage(this)">
       <div id="gImgPreview" class="hidden"></div>
       <div class="flex-1 relative">
-        <input type="text" name="content" id="gMsgInput" placeholder="Type a message..." autocomplete="off"
+        <input type="text" name="content" id="gMsgInput" placeholder="{{ _('Type a message...') }}" autocomplete="off"
                class="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-full px-5 py-4 pr-12 text-base focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20 transition-all">
       </div>
       <button type="submit" class="w-14 h-14 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 transition-all active:scale-95 shadow-lg shadow-primary-500/30 flex-shrink-0">

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ g.lang or 'en' }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>SilverConnect - {% block title %}Home{% endblock %}</title>
+<title>SilverConnect - {% block title %}{{ _('Home') }}{% endblock %}</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='14' r='12' fill='%23d4880f'/><path d='M10 14Q16 6 22 14Q16 22 10 14Z' fill='white' opacity='0.4'/></svg>">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -26,6 +26,33 @@ tailwind.config = {
 <body>
 {% block content %}{% endblock %}
 
+<!-- Language Picker Modal -->
+<div id="langModal" class="fixed inset-0 z-50 flex items-end justify-center hidden" onclick="closeLangModal(event)">
+  <div class="absolute inset-0 bg-black/40" onclick="closeLangModal(event)"></div>
+  <div class="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-t-3xl p-6 pb-10 animate-slide-up" style="max-height:70vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-lg text-slate-800 dark:text-white">{{ _('Select Language') }}</h3>
+      <button onclick="closeLangModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center"><i class="fas fa-xmark text-slate-500"></i></button>
+    </div>
+    {% for lang in available_languages() %}
+    <a href="{{ url_for('set_language', lang=lang.code) }}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all {% if g.lang == lang.code %}bg-primary-50 dark:bg-primary-900/20 ring-1 ring-primary-300{% endif %}">
+      <span class="text-2xl">{{ lang.flag }}</span>
+      <div>
+        <p class="font-semibold text-slate-800 dark:text-white {% if g.lang == lang.code %}text-primary-600 dark:text-primary-400{% endif %}">{{ lang.native }}</p>
+        <p class="text-xs text-slate-400">{{ lang.name }}</p>
+      </div>
+      {% if g.lang == lang.code %}<i class="fas fa-check ml-auto text-primary-500"></i>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>
+window.__translations = { "Select Language": "{{ _('Select Language') }}" };
+function openLangModal() { document.getElementById('langModal').classList.remove('hidden'); }
+function closeLangModal(e) { if(!e || e.target === e.currentTarget || !e) document.getElementById('langModal').classList.add('hidden'); }
+function __(key) { return window.__translations[key] || key; }
+</script>
 </body>
 </html>

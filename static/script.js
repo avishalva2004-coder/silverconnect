@@ -1,3 +1,9 @@
+// ─── i18n ───
+function __(key) {
+  if (window.__translations && window.__translations[key]) return window.__translations[key];
+  return key;
+}
+
 // ─── Theme ───
 function toggleTheme() {
   document.body.classList.toggle('dark');
@@ -67,7 +73,7 @@ function checkMedicineAlarm() {
         if (med.med_time === currentTime && !medAlarmNotified.has(key)) {
           medAlarmNotified.add(key);
           playMedAlarm();
-          showToast("\u23F0 Time to take " + med.name + "!");
+          showToast(__("\u23F0 Time to take") + " " + med.name + "!");
         }
       });
     });
