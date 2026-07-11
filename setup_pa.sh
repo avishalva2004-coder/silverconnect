@@ -1,5 +1,5 @@
 #!/bin/bash
-# SilverConnect - PythonAnywhere Auto Setup Script
+# SilverConnect - PythonAnywhere Auto Setup Script (SQLite)
 # Run this from the PythonAnywhere Bash console
 
 set -e
@@ -19,26 +19,23 @@ source venv/bin/activate
 
 # 3. Install dependencies
 pip install --upgrade pip
-pip install flask flask-bcrypt flask-cors pymysql cryptography
+pip install flask flask-bcrypt cryptography
 pip install gunicorn
 
-# 4. Create MySQL database and run schema
-PASSWORD=$(openssl rand -base64 12)
-mysql -u $USERNAME -h$USERNAME.mysql.pythonanywhere-services.com -e "CREATE DATABASE IF NOT EXISTS $USERNAME\$silverconnect;"
-mysql -u $USERNAME -h$USERNAME.mysql.pythonanywhere-services.com $USERNAME\$silverconnect < schema.sql
+# 4. Initialize SQLite database
+python3 -c "
+import os, sys
+os.chdir(os.path.dirname(__file__) or '.')
+from app import init_db
+init_db()
+print('DB initialized at', os.path.join(os.path.dirname(__file__), 'silverconnect.db'))
+"
 
-# 5. Create .env file with DB credentials
+# 5. Create .env file
 cat > .env << EOF
-DB_HOST=$USERNAME.mysql.pythonanywhere-services.com
-DB_USER=$USERNAME
-DB_PASSWORD=
-DB_NAME=$USERNAME\$silverconnect
 SECRET_KEY=$(openssl rand -hex 24)
 EOF
 
-echo "SECRET_KEY=$(openssl rand -hex 24)" >> .env
-
-# 6. Update app.py to read DB config from environment
 echo ""
 echo "=== Setup complete! ==="
 echo ""
@@ -53,10 +50,6 @@ echo ""
 echo "---------------------------------------------------"
 echo "import sys"
 echo "import os"
-echo "os.environ['DB_HOST'] = '$USERNAME.mysql.pythonanywhere-services.com'"
-echo "os.environ['DB_USER'] = '$USERNAME'"
-echo "os.environ['DB_PASSWORD'] = ''"
-echo "os.environ['DB_NAME'] = '$USERNAME\$silverconnect'"
 echo "os.environ['SECRET_KEY'] = '$(openssl rand -hex 24)'"
 echo ""
 echo "path = '/home/$USERNAME/silverconnect'"

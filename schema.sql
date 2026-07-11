@@ -1,84 +1,81 @@
-CREATE DATABASE IF NOT EXISTS silverconnect CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE silverconnect;
-
 CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(120) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  avatar CHAR(1) DEFAULT 'S',
-  status ENUM('online','offline') DEFAULT 'offline',
-  language VARCHAR(10) DEFAULT 'en',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  avatar TEXT DEFAULT 'S',
+  status TEXT DEFAULT 'offline' CHECK(status IN ('online','offline')),
+  language TEXT DEFAULT 'en',
+  created_at TEXT DEFAULT (datetime('now','localtime'))
+);
 
 CREATE TABLE IF NOT EXISTS groups_tb (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  icon VARCHAR(50) NOT NULL,
-  color_class VARCHAR(100) NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  icon TEXT NOT NULL,
+  color_class TEXT NOT NULL,
   description TEXT,
-  members_count INT DEFAULT 0
-) ENGINE=InnoDB;
+  members_count INTEGER DEFAULT 0
+);
 
 CREATE TABLE IF NOT EXISTS user_groups (
-  user_id INT NOT NULL,
-  group_id INT NOT NULL,
+  user_id INTEGER NOT NULL,
+  group_id INTEGER NOT NULL,
   PRIMARY KEY (user_id, group_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (group_id) REFERENCES groups_tb(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS messages (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   content TEXT NOT NULL,
-  room VARCHAR(100) NOT NULL DEFAULT 'general',
-  image_url VARCHAR(500) DEFAULT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  room TEXT NOT NULL DEFAULT 'general',
+  image_url TEXT DEFAULT NULL,
+  created_at TEXT DEFAULT (datetime('now','localtime')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS events (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(200) NOT NULL,
-  event_date DATE NOT NULL,
-  event_time VARCHAR(20) NOT NULL,
-  venue VARCHAR(200) NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  event_date TEXT NOT NULL,
+  event_time TEXT NOT NULL,
+  venue TEXT NOT NULL,
   description TEXT,
-  icon_class VARCHAR(50) DEFAULT 'fa-calendar',
-  going_count INT DEFAULT 0
-) ENGINE=InnoDB;
+  icon_class TEXT DEFAULT 'fa-calendar',
+  going_count INTEGER DEFAULT 0
+);
 
 CREATE TABLE IF NOT EXISTS event_rsvps (
-  user_id INT NOT NULL,
-  event_id INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  user_id INTEGER NOT NULL,
+  event_id INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now','localtime')),
   PRIMARY KEY (user_id, event_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS medicines (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  name VARCHAR(200) NOT NULL,
-  dosage VARCHAR(100) NOT NULL,
-  med_time VARCHAR(10) NOT NULL,
-  food VARCHAR(100) DEFAULT 'After breakfast',
-  taken BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  dosage TEXT NOT NULL,
+  med_time TEXT NOT NULL,
+  food TEXT DEFAULT 'After breakfast',
+  taken INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now','localtime')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS health_tips (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  icon VARCHAR(50) NOT NULL,
-  title VARCHAR(200) NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  icon TEXT NOT NULL,
+  title TEXT NOT NULL,
   description TEXT NOT NULL
-) ENGINE=InnoDB;
+);
 
-INSERT IGNORE INTO health_tips (icon, title, description) VALUES
+INSERT OR IGNORE INTO health_tips (icon, title, description) VALUES
 ('fa-droplet', 'Stay Hydrated', 'Drink 8 glasses of water daily to maintain good health and energy levels.'),
 ('fa-person-walking', 'Walk Daily', 'A 20-minute walk improves heart health, mood, and joint flexibility.'),
 ('fa-carrot', 'Eat Colorful', 'Include 5 servings of fruits & vegetables each day for vital nutrients.'),
@@ -86,7 +83,7 @@ INSERT IGNORE INTO health_tips (icon, title, description) VALUES
 ('fa-brain', 'Stay Active', 'Learn something new daily. Puzzles, games, and reading keep your mind sharp.'),
 ('fa-hand-holding-heart', 'Connect Daily', 'Talk to a friend or family member every day. Social connections boost longevity.');
 
-INSERT IGNORE INTO groups_tb (name, icon, color_class, description, members_count) VALUES
+INSERT OR IGNORE INTO groups_tb (name, icon, color_class, description, members_count) VALUES
 ('Garden Club', 'fa-seedling', 'from-emerald-400 to-green-600', 'Share gardening tips, plant pictures, and seasonal advice', 24),
 ('Yoga & Meditation', 'fa-spa', 'from-violet-400 to-purple-600', 'Morning yoga sessions, breathing exercises, and mindfulness', 31),
 ('Bhajan Sandhya', 'fa-music', 'from-rose-400 to-pink-600', 'Devotional songs, spiritual talks, and community singing', 18),
@@ -95,39 +92,39 @@ INSERT IGNORE INTO groups_tb (name, icon, color_class, description, members_coun
 ('Walking Group', 'fa-person-walking', 'from-teal-400 to-emerald-600', 'Daily morning walks in the park. All fitness levels welcome!', 22);
 
 CREATE TABLE IF NOT EXISTS friendships (
-  user_id1 INT NOT NULL,
-  user_id2 INT NOT NULL,
-  requester_id INT NOT NULL,
-  status ENUM('pending','accepted') DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  user_id1 INTEGER NOT NULL,
+  user_id2 INTEGER NOT NULL,
+  requester_id INTEGER NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK(status IN ('pending','accepted')),
+  created_at TEXT DEFAULT (datetime('now','localtime')),
   PRIMARY KEY (user_id1, user_id2),
   FOREIGN KEY (user_id1) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id2) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS group_messages (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  group_id INT NOT NULL,
-  user_id INT NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  group_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
   content TEXT NOT NULL,
-  image_url VARCHAR(500) DEFAULT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  image_url TEXT DEFAULT NULL,
+  created_at TEXT DEFAULT (datetime('now','localtime')),
   FOREIGN KEY (group_id) REFERENCES groups_tb(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE IF NOT EXISTS videos (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  category VARCHAR(100) NOT NULL,
-  title VARCHAR(200) NOT NULL,
-  youtube_id VARCHAR(20) NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category TEXT NOT NULL,
+  title TEXT NOT NULL,
+  youtube_id TEXT NOT NULL,
   description TEXT,
-  icon VARCHAR(50) DEFAULT 'fa-video',
-  color_class VARCHAR(100) DEFAULT 'from-primary-400 to-amber-500'
-) ENGINE=InnoDB;
+  icon TEXT DEFAULT 'fa-video',
+  color_class TEXT DEFAULT 'from-primary-400 to-amber-500'
+);
 
-INSERT IGNORE INTO videos (category, title, youtube_id, description, icon, color_class) VALUES
+INSERT OR IGNORE INTO videos (category, title, youtube_id, description, icon, color_class) VALUES
 ('Yoga & Exercise', 'Gentle Yoga for Seniors', 'hJbRpHZr_d0', 'A gentle 20-minute yoga routine perfect for senior citizens', 'fa-spa', 'from-violet-400 to-purple-600'),
 ('Yoga & Exercise', 'Chair Exercises for Elderly', 'UJ7v5pQvMYM', 'Easy seated exercises to improve mobility and strength', 'fa-person-walking', 'from-violet-400 to-purple-600'),
 ('Yoga & Exercise', 'Morning Stretch Routine', 'r1gDHCmXx2Y', 'Simple morning stretches to start your day fresh', 'fa-sun', 'from-violet-400 to-purple-600'),
@@ -141,7 +138,7 @@ INSERT IGNORE INTO videos (category, title, youtube_id, description, icon, color
 ('Health Talks', 'Heart Health Tips', 'L_cglacLw8M', 'Important tips for maintaining a healthy heart in golden years', 'fa-heart-pulse', 'from-sky-400 to-blue-600'),
 ('Health Talks', 'Managing Blood Pressure Naturally', 'gN5Wf8eOaqg', 'Natural ways to manage blood pressure through diet and lifestyle', 'fa-droplet', 'from-sky-400 to-blue-600');
 
-INSERT IGNORE INTO events (title, event_date, event_time, venue, description, icon_class, going_count) VALUES
+INSERT OR IGNORE INTO events (title, event_date, event_time, venue, description, icon_class, going_count) VALUES
 ('Morning Yoga in the Park', '2026-07-12', '6:30 AM', 'Central Park', 'Start your day with gentle yoga surrounded by nature. Bring your mat!', 'fa-sun', 12),
 ('Bhajan Evening', '2026-07-14', '6:00 PM', 'Community Hall, Sector 5', 'An evening of devotional songs and spiritual fellowship.', 'fa-moon', 18),
 ('Health Checkup Camp', '2026-07-16', '9:00 AM', 'SilverConnect Wellness Center', 'Free blood pressure, sugar, and general health checkup for seniors.', 'fa-stethoscope', 24),

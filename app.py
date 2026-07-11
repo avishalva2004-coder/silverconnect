@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, g
 from flask_bcrypt import Bcrypt
-from flask_cors import CORS
-import pymysql
+import sqlite3
 import os
 import random
 import re
@@ -46,22 +45,25 @@ app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 bcrypt = Bcrypt(app)
-CORS(app)
+
+DB_PATH = os.path.join(os.path.dirname(__file__), 'silverconnect.db')
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+def init_db():
+    db = get_db()
+    with open(os.path.join(os.path.dirname(__file__), 'schema.sql'), 'r', encoding='utf-8') as f:
+        db.executescript(f.read())
+    db.commit()
+    db.close()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
-    'user': os.environ.get('DB_USER', 'root'),
-    'password': os.environ.get('DB_PASSWORD', ''),
-    'database': os.environ.get('DB_NAME', 'silverconnect'),
-    'charset': 'utf8mb4',
-    'cursorclass': pymysql.cursors.DictCursor
-}
-
-def get_db():
-    return pymysql.connect(**DB_CONFIG)
 
 def login_required(f):
     def wrapper(*args, **kwargs):
@@ -97,7 +99,7 @@ def set_language(lang):
         if 'user_id' in session:
             db = get_db()
             cur = db.cursor()
-            cur.execute('UPDATE users SET language = %s WHERE id = %s', (lang, session['user_id']))
+            cur.execute('UPDATE users SET language = ? WHERE id = ?', (lang, session['user_id']))
             db.commit()
             cur.close()
             db.close()
@@ -143,14 +145,14 @@ def signup():
         return render_template('signup.html', error='Password needs a number.')
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT id FROM users WHERE email = %s', (email,))
+    cur.execute('SELECT id FROM users WHERE email = ?', (email,))
     if cur.fetchone():
         cur.close()
         db.close()
         return render_template('signup.html', error='Email already registered.')
     pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
     avatar = name.strip()[0].upper()
-    cur.execute('INSERT INTO users (name, email, password_hash, avatar, status, language) VALUES (%s, %s, %s, %s, %s, %s)',
+    cur.execute('INSERT INTO users (name, email, password_hash, avatar, status, language) VALUES (?, ?, ?, ?, ?, ?)',
                 (name, email, pw_hash, avatar, 'online', session.get('lang', 'en')))
     db.commit()
     user_id = cur.lastrowid
@@ -167,7 +169,7 @@ def login():
     password = request.form.get('password', '').strip()
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT * FROM users WHERE email = %s', (email,))
+    cur.execute('SELECT * FROM users WHERE email = ?', (email,))
     user = cur.fetchone()
     cur.close()
     db.close()
@@ -175,10 +177,10 @@ def login():
         session['user_id'] = user['id']
         session['user_name'] = user['name']
         session['user_avatar'] = user['avatar']
-        session['lang'] = user.get('language', 'en')
+        session['lang'] = user['language'] if user['language'] else 'en'
         db2 = get_db()
         cur2 = db2.cursor()
-        cur2.execute('UPDATE users SET status = %s WHERE id = %s', ('online', user['id']))
+        cur2.execute('UPDATE users SET status = ? WHERE id = ?', ('online', user['id']))
         db2.commit()
         cur2.close()
         db2.close()
@@ -191,7 +193,7 @@ def logout():
     if uid:
         db = get_db()
         cur = db.cursor()
-        cur.execute('UPDATE users SET status = %s WHERE id = %s', ('offline', uid))
+        cur.execute('UPDATE users SET status = ? WHERE id = ?', ('offline', uid))
         db.commit()
         cur.close()
         db.close()
@@ -206,16 +208,16 @@ def home():
     uid = session['user_id']
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT COUNT(*) AS cnt FROM user_groups WHERE user_id = %s', (uid,))
+    cur.execute('SELECT COUNT(*) AS cnt FROM user_groups WHERE user_id = ?', (uid,))
     group_count = cur.fetchone()['cnt']
-    cur.execute('SELECT COUNT(*) AS cnt FROM medicines WHERE user_id = %s AND taken = FALSE', (uid,))
+    cur.execute('SELECT COUNT(*) AS cnt FROM medicines WHERE user_id = ? AND taken = 0', (uid,))
     med_count = cur.fetchone()['cnt']
-    cur.execute('SELECT * FROM medicines WHERE user_id = %s AND taken = FALSE ORDER BY med_time LIMIT 5', (uid,))
+    cur.execute('SELECT * FROM medicines WHERE user_id = ? AND taken = 0 ORDER BY med_time LIMIT 5', (uid,))
     today_meds = cur.fetchall()
-    cur.execute('SELECT * FROM health_tips ORDER BY RAND() LIMIT 1')
+    cur.execute('SELECT * FROM health_tips ORDER BY RANDOM() LIMIT 1')
     tip = cur.fetchone()
     cur.execute('''SELECT COUNT(*) AS cnt FROM friendships
-                   WHERE ((user_id1 = %s OR user_id2 = %s) AND status = 'accepted')''', (uid, uid))
+                   WHERE ((user_id1 = ? OR user_id2 = ?) AND status = 'accepted')''', (uid, uid))
     friend_count = cur.fetchone()['cnt']
     cur.close()
     db.close()
@@ -232,39 +234,39 @@ def communities():
     uid = session['user_id']
     db = get_db()
     cur = db.cursor()
-    cur.execute('''SELECT g.* FROM groups_tb g''')
+    cur.execute('SELECT * FROM groups_tb')
     groups = cur.fetchall()
-    cur.execute('SELECT group_id FROM user_groups WHERE user_id = %s', (uid,))
+    cur.execute('SELECT group_id FROM user_groups WHERE user_id = ?', (uid,))
     joined = {r['group_id'] for r in cur.fetchall()}
 
     # Friend requests pending for me
     cur.execute('''SELECT f.requester_id AS id, u.name, u.avatar FROM friendships f
                    JOIN users u ON u.id = f.requester_id
                    WHERE f.status = 'pending'
-                     AND ((f.requester_id = f.user_id1 AND f.user_id2 = %s)
-                       OR (f.requester_id = f.user_id2 AND f.user_id1 = %s))''', (uid, uid))
+                     AND ((f.requester_id = f.user_id1 AND f.user_id2 = ?)
+                        OR (f.requester_id = f.user_id2 AND f.user_id1 = ?))''', (uid, uid))
     pending_requests = cur.fetchall()
 
     # My friends (accepted)
     cur.execute("""SELECT u.id, u.name, u.avatar, u.status FROM friendships f
-                   JOIN users u ON u.id = CASE WHEN f.user_id1 = %s THEN f.user_id2 ELSE f.user_id1 END
-                   WHERE (f.user_id1 = %s OR f.user_id2 = %s) AND f.status = 'accepted'""", (uid, uid, uid))
+                   JOIN users u ON u.id = CASE WHEN f.user_id1 = ? THEN f.user_id2 ELSE f.user_id1 END
+                   WHERE (f.user_id1 = ? OR f.user_id2 = ?) AND f.status = 'accepted'""", (uid, uid, uid))
     my_friends = cur.fetchall()
     friend_ids = {f['id'] for f in my_friends}
 
     # Suggested users — not me, not friends, not pending
     cur.execute('''SELECT user_id1, user_id2 FROM friendships
-                   WHERE (user_id1 = %s OR user_id2 = %s) AND status = 'pending' ''', (uid, uid))
+                   WHERE (user_id1 = ? OR user_id2 = ?) AND status = 'pending' ''', (uid, uid))
     pending_ids = set()
     for r in cur.fetchall():
         pending_ids.add(r['user_id1'])
         pending_ids.add(r['user_id2'])
     excluded = {uid} | friend_ids | pending_ids
     if excluded:
-        placeholders = ','.join(['%s'] * len(excluded))
+        placeholders = ','.join(['?'] * len(excluded))
         cur.execute(f'SELECT id, name, avatar FROM users WHERE id NOT IN ({placeholders}) LIMIT 10', tuple(excluded))
     else:
-        cur.execute('SELECT id, name, avatar FROM users WHERE id != %s LIMIT 10', (uid,))
+        cur.execute('SELECT id, name, avatar FROM users WHERE id != ? LIMIT 10', (uid,))
     suggested = cur.fetchall()
 
     cur.close()
@@ -277,11 +279,11 @@ def communities():
 def join_group(group_id):
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT id FROM groups_tb WHERE id = %s', (group_id,))
+    cur.execute('SELECT id FROM groups_tb WHERE id = ?', (group_id,))
     if not cur.fetchone():
         cur.close(); db.close()
         return jsonify({'error': 'Group not found'}), 404
-    cur.execute('INSERT IGNORE INTO user_groups (user_id, group_id) VALUES (%s, %s)',
+    cur.execute('INSERT OR IGNORE INTO user_groups (user_id, group_id) VALUES (?, ?)',
                 (session['user_id'], group_id))
     db.commit()
     cur.close(); db.close()
@@ -292,17 +294,17 @@ def join_group(group_id):
 def group_chat(group_id):
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT * FROM groups_tb WHERE id = %s', (group_id,))
+    cur.execute('SELECT * FROM groups_tb WHERE id = ?', (group_id,))
     group = cur.fetchone()
     if not group:
         cur.close(); db.close()
         return 'Group not found', 404
     cur.execute('''SELECT gm.*, u.name, u.avatar FROM group_messages gm
                    JOIN users u ON u.id = gm.user_id
-                   WHERE gm.group_id = %s
+                   WHERE gm.group_id = ?
                    ORDER BY gm.id ASC LIMIT 100''', (group_id,))
     messages = cur.fetchall()
-    cur.execute('SELECT COUNT(*) AS cnt FROM group_messages WHERE group_id = %s', (group_id,))
+    cur.execute('SELECT COUNT(*) AS cnt FROM group_messages WHERE group_id = ?', (group_id,))
     msg_count = cur.fetchone()['cnt']
     cur.close(); db.close()
     return render_template('group_chat.html', group=group, messages=messages, msg_count=msg_count)
@@ -324,11 +326,11 @@ def group_send(group_id):
         return jsonify({'error': 'Empty message'}), 400
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT 1 FROM user_groups WHERE user_id = %s AND group_id = %s', (session['user_id'], group_id))
+    cur.execute('SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ?', (session['user_id'], group_id))
     if not cur.fetchone():
         cur.close(); db.close()
         return jsonify({'error': 'Not a member'}), 403
-    cur.execute('INSERT INTO group_messages (group_id, user_id, content, image_url) VALUES (%s, %s, %s, %s)',
+    cur.execute('INSERT INTO group_messages (group_id, user_id, content, image_url) VALUES (?, ?, ?, ?)',
                 (group_id, session['user_id'], content, image_url))
     db.commit()
     cur.close(); db.close()
@@ -342,11 +344,11 @@ def group_get_messages(group_id):
     cur = db.cursor()
     cur.execute('''SELECT gm.*, u.name, u.avatar FROM group_messages gm
                    JOIN users u ON u.id = gm.user_id
-                   WHERE gm.group_id = %s AND gm.id > %s
+                   WHERE gm.group_id = ? AND gm.id > ?
                    ORDER BY gm.id ASC''', (group_id, last_id))
     msgs = cur.fetchall()
     cur.close(); db.close()
-    return jsonify(msgs)
+    return jsonify([dict(m) for m in msgs])
 
 @app.route('/chat')
 @login_required
@@ -356,12 +358,14 @@ def chat():
     cur = db.cursor()
     cur.execute('''SELECT DISTINCT m.room,
                    (SELECT content FROM messages WHERE room = m.room ORDER BY id DESC LIMIT 1) AS last_msg,
-                   (SELECT COUNT(*) FROM messages WHERE room = m.room AND user_id != %s) AS msg_count
+                   (SELECT COUNT(*) FROM messages WHERE room = m.room AND user_id != ?) AS msg_count
                    FROM messages m
-                   WHERE m.room LIKE %s
+                   WHERE m.room LIKE ?
                    ORDER BY (SELECT MAX(id) FROM messages WHERE room = m.room) DESC''',
                 (uid, f'%{uid}%'))
-    rooms_data = cur.fetchall()
+    rooms_data = []
+    for r in cur.fetchall():
+        rooms_data.append(dict(r))
     for r in rooms_data:
         parts = r['room'].split('_')
         partner_id = str(uid)
@@ -369,7 +373,7 @@ def chat():
             if p != str(uid):
                 partner_id = p
                 break
-        cur.execute('SELECT name, avatar, status FROM users WHERE id = %s', (partner_id,))
+        cur.execute('SELECT name, avatar, status FROM users WHERE id = ?', (int(partner_id),))
         partner = cur.fetchone() or {'name': 'Unknown', 'avatar': '?', 'status': 'offline'}
         r['name'] = partner['name']
         r['avatar'] = partner['avatar']
@@ -377,9 +381,9 @@ def chat():
 
     # Only show friends as chat-able contacts
     cur.execute("""SELECT DISTINCT u.id, u.name, u.avatar, u.status FROM friendships f
-                   JOIN users u ON u.id = CASE WHEN f.user_id1 = %s THEN f.user_id2 ELSE f.user_id1 END
-                   WHERE (f.user_id1 = %s OR f.user_id2 = %s) AND f.status = 'accepted'""", (uid, uid, uid))
-    friends = cur.fetchall()
+                   JOIN users u ON u.id = CASE WHEN f.user_id1 = ? THEN f.user_id2 ELSE f.user_id1 END
+                   WHERE (f.user_id1 = ? OR f.user_id2 = ?) AND f.status = 'accepted'""", (uid, uid, uid))
+    friends = [dict(f) for f in cur.fetchall()]
     existing_rooms = {r['room'] for r in rooms_data}
     friends = [f for f in friends if '_'.join(sorted([str(uid), str(f['id'])])) not in existing_rooms]
 
@@ -393,7 +397,7 @@ def chat_room(room_name):
     cur = db.cursor()
     cur.execute('''SELECT m.*, u.name, u.avatar FROM messages m
                    JOIN users u ON u.id = m.user_id
-                   WHERE m.room = %s
+                   WHERE m.room = ?
                    ORDER BY m.id ASC LIMIT 100''', (room_name,))
     messages = cur.fetchall()
     cur.close(); db.close()
@@ -406,8 +410,8 @@ def chat_room(room_name):
             break
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT id, name, avatar FROM users WHERE id = %s', (partner_id,))
-    partner = cur.fetchone() or {'id': partner_id, 'name': 'Friend', 'avatar': 'F'}
+    cur.execute('SELECT id, name, avatar FROM users WHERE id = ?', (int(partner_id),))
+    partner = cur.fetchone() or {'id': int(partner_id), 'name': 'Friend', 'avatar': 'F'}
     cur.close(); db.close()
     return render_template('chat_room.html', room=room_name, messages=messages, partner=partner)
 
@@ -428,7 +432,7 @@ def send_message(room_name):
         return jsonify({'error': 'Empty message'}), 400
     db = get_db()
     cur = db.cursor()
-    cur.execute('INSERT INTO messages (user_id, content, room, image_url) VALUES (%s, %s, %s, %s)',
+    cur.execute('INSERT INTO messages (user_id, content, room, image_url) VALUES (?, ?, ?, ?)',
                 (session['user_id'], content, room_name, image_url))
     db.commit()
     cur.close(); db.close()
@@ -442,18 +446,18 @@ def get_messages(room_name):
     cur = db.cursor()
     cur.execute('''SELECT m.*, u.name, u.avatar FROM messages m
                    JOIN users u ON u.id = m.user_id
-                   WHERE m.room = %s AND m.id > %s
+                   WHERE m.room = ? AND m.id > ?
                    ORDER BY m.id ASC''', (room_name, last_id))
     msgs = cur.fetchall()
     cur.close(); db.close()
-    return jsonify(msgs)
+    return jsonify([dict(m) for m in msgs])
 
 @app.route('/api/user/<int:user_id>/status')
 @login_required
 def user_status(user_id):
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT status FROM users WHERE id = %s', (user_id,))
+    cur.execute('SELECT status FROM users WHERE id = ?', (user_id,))
     u = cur.fetchone()
     cur.close(); db.close()
     return jsonify({'status': u['status'] if u else 'offline'})
@@ -471,20 +475,20 @@ def events():
     db = get_db()
     cur = db.cursor()
     cur.execute('SELECT * FROM events ORDER BY event_date ASC')
-    events = cur.fetchall()
-    cur.execute('SELECT event_id FROM event_rsvps WHERE user_id = %s', (session['user_id'],))
+    events_list = cur.fetchall()
+    cur.execute('SELECT event_id FROM event_rsvps WHERE user_id = ?', (session['user_id'],))
     rsvped = {r['event_id'] for r in cur.fetchall()}
     cur.close(); db.close()
-    return render_template('events.html', events=events, rsvped=rsvped)
+    return render_template('events.html', events=events_list, rsvped=rsvped)
 
 @app.route('/events/rsvp/<int:event_id>', methods=['POST'])
 @login_required
 def rsvp_event(event_id):
     db = get_db()
     cur = db.cursor()
-    cur.execute('INSERT IGNORE INTO event_rsvps (user_id, event_id) VALUES (%s, %s)',
+    cur.execute('INSERT OR IGNORE INTO event_rsvps (user_id, event_id) VALUES (?, ?)',
                 (session['user_id'], event_id))
-    cur.execute('UPDATE events SET going_count = (SELECT COUNT(*) FROM event_rsvps WHERE event_id = %s) WHERE id = %s',
+    cur.execute('UPDATE events SET going_count = (SELECT COUNT(*) FROM event_rsvps WHERE event_id = ?) WHERE id = ?',
                 (event_id, event_id))
     db.commit()
     cur.close(); db.close()
@@ -497,7 +501,7 @@ def health():
     cur = db.cursor()
     cur.execute('SELECT * FROM health_tips')
     tips = cur.fetchall()
-    cur.execute('SELECT * FROM medicines WHERE user_id = %s ORDER BY med_time', (session['user_id'],))
+    cur.execute('SELECT * FROM medicines WHERE user_id = ? ORDER BY med_time', (session['user_id'],))
     meds = cur.fetchall()
     cur.close(); db.close()
     return render_template('health.html', tips=tips, meds=meds)
@@ -513,7 +517,7 @@ def add_medicine():
         return jsonify({'error': 'Missing fields'}), 400
     db = get_db()
     cur = db.cursor()
-    cur.execute('INSERT INTO medicines (user_id, name, dosage, med_time, food) VALUES (%s, %s, %s, %s, %s)',
+    cur.execute('INSERT INTO medicines (user_id, name, dosage, med_time, food) VALUES (?, ?, ?, ?, ?)',
                 (session['user_id'], name, dosage, med_time, food))
     db.commit()
     cur.close(); db.close()
@@ -524,7 +528,7 @@ def add_medicine():
 def toggle_medicine(med_id):
     db = get_db()
     cur = db.cursor()
-    cur.execute('UPDATE medicines SET taken = NOT taken WHERE id = %s AND user_id = %s',
+    cur.execute('UPDATE medicines SET taken = NOT taken WHERE id = ? AND user_id = ?',
                 (med_id, session['user_id']))
     db.commit()
     cur.close(); db.close()
@@ -535,7 +539,7 @@ def toggle_medicine(med_id):
 def delete_medicine(med_id):
     db = get_db()
     cur = db.cursor()
-    cur.execute('DELETE FROM medicines WHERE id = %s AND user_id = %s', (med_id, session['user_id']))
+    cur.execute('DELETE FROM medicines WHERE id = ? AND user_id = ?', (med_id, session['user_id']))
     db.commit()
     cur.close(); db.close()
     return jsonify({'success': True})
@@ -545,10 +549,10 @@ def delete_medicine(med_id):
 def api_medicines_today():
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT id, name, med_time FROM medicines WHERE user_id = %s AND taken = FALSE', (session['user_id'],))
+    cur.execute('SELECT id, name, med_time FROM medicines WHERE user_id = ? AND taken = 0', (session['user_id'],))
     meds = cur.fetchall()
     cur.close(); db.close()
-    return jsonify(meds)
+    return jsonify([dict(m) for m in meds])
 
 # ─── Friends System ───
 
@@ -560,11 +564,11 @@ def friend_request(user_id):
     uid1, uid2 = sorted([session['user_id'], user_id])
     db = get_db()
     cur = db.cursor()
-    cur.execute('SELECT * FROM friendships WHERE user_id1 = %s AND user_id2 = %s', (uid1, uid2))
+    cur.execute('SELECT * FROM friendships WHERE user_id1 = ? AND user_id2 = ?', (uid1, uid2))
     if cur.fetchone():
         cur.close(); db.close()
         return jsonify({'error': 'Already sent or friends'}), 400
-    cur.execute('INSERT INTO friendships (user_id1, user_id2, requester_id, status) VALUES (%s, %s, %s, %s)',
+    cur.execute('INSERT INTO friendships (user_id1, user_id2, requester_id, status) VALUES (?, ?, ?, ?)',
                 (uid1, uid2, session['user_id'], 'pending'))
     db.commit()
     cur.close(); db.close()
@@ -576,7 +580,7 @@ def friend_accept(user_id):
     uid1, uid2 = sorted([session['user_id'], user_id])
     db = get_db()
     cur = db.cursor()
-    cur.execute('UPDATE friendships SET status = %s WHERE user_id1 = %s AND user_id2 = %s AND requester_id = %s',
+    cur.execute('UPDATE friendships SET status = ? WHERE user_id1 = ? AND user_id2 = ? AND requester_id = ?',
                 ('accepted', uid1, uid2, user_id))
     db.commit()
     cur.close(); db.close()
@@ -588,11 +592,13 @@ def friend_reject(user_id):
     uid1, uid2 = sorted([session['user_id'], user_id])
     db = get_db()
     cur = db.cursor()
-    cur.execute('DELETE FROM friendships WHERE user_id1 = %s AND user_id2 = %s AND requester_id = %s',
+    cur.execute('DELETE FROM friendships WHERE user_id1 = ? AND user_id2 = ? AND requester_id = ?',
                 (uid1, uid2, user_id))
     db.commit()
     cur.close(); db.close()
     return jsonify({'success': True})
 
 if __name__ == '__main__':
+    if not os.path.exists(DB_PATH):
+        init_db()
     app.run(debug=True, port=5000)
